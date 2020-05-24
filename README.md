@@ -11,8 +11,10 @@ wrapper for xtrabackup
 
 to setup to use python3 secure config
 
+```
 wget https://github.com/cimichaelm/python3-secureconfig/archive/master.zip
 python3 setup.py install 
+```
 
 ## Before first backup run create the pigz helper scripts 
 
