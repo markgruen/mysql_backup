@@ -20,6 +20,7 @@ python3 setup.py install
 
 ## create the secure config secrets file
 
+```
 cat /root/.secrets/config.ini
 [backup]
 port = 3306
@@ -29,3 +30,4 @@ super_user = root
 
 secret = CK_FERNET::gAAAAABdYFLoRxwc89xVHY_JFBXXXXXXXXXXXXXXXXXXXIPfITLSXXXXXXXXXXXXXXXXXXXGfcY95vocwNujhe_kNX2-gLCCCD3fyM_glEpKYvwft8kfmXM=
 super_secret = CK_FERNET::gAAAAABdYXXXXXXXXXXXXXXXXXXXfc9iAVMWj_AHR_o-A0DQXXXXXXXXXXXXXXXXXXXx2r63qzbmI6fGDzgdBvn6mrtQhxH1mA==
+```
