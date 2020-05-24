@@ -16,7 +16,7 @@ python3 setup.py install
 
 ## Before first backup run create the pigz helper scripts 
 
-./innodbbackup_pigz.py --generate-pigz
+  ./innodbbackup_pigz.py --generate-pigz
 
 ## create the secure config secrets file
 
