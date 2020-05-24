@@ -51,7 +51,7 @@ def clean_backups(base_directory, keep_days, test=True):
 
             else:
                 print('KEEPING   {0}'.format(os.path.join(path)))
-        except ValueError, e:
+        except ValueError as e:
             print("SKIPPING  {0} - doesn't match YYYY-MM-DD".format(os.path.join(base_directory, d)))
 
 if __name__ == '__main__':
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     print(args)
     try:
         args = schema.validate(args)
-    except SchemaError, e:
+    except SchemaError as e:
         sys.exit(e.code)
     clean_backups(args['<path>'], args['<keep_days>'], args['--trial-run'])
 

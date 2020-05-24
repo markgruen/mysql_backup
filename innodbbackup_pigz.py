@@ -1,19 +1,18 @@
 #! /usr/bin/env python2.7
 """
 Usage:
-  innodbbackup.py --full [(--no-prepare | --prepare-mem=MEM)] [--compress --no-check --threads=THREADS --compress-threads=CTHREADS --keep=DAYS --enc --throttle=IOPS --slave-safe] [<BACKUP_BASE_PATH>]
-  innodbbackup.py --inc=LEVEL [--threads=THREADS --keep=DAYS] [<BACKUP_BASE_PATH>]
-  innodbbackup.py --inc-prepare [--compress --no-check --threads=THREADS --keep=DAYS --enc] [--prepare-mem=MEM] [<BACKUP_BASE_PATH>]
+  innodbbackup.py --full [(--no-prepare | --prepare-mem=MEM)] [--compress --compress-threads=CTHREADS --no-check] [options] [<BACKUP_BASE_PATH>]
+  innodbbackup.py --generate-pigz
+  innodbbackup.py --inc=LEVEL [options] [<BACKUP_BASE_PATH>]
+  innodbbackup.py --inc-prepare [--prepare-mem=MEM] [--compress --compress-threads=CTHREADS --no-check] [options] [<BACKUP_BASE_PATH>]
 
 Options:
-  --compress             Compress prepared or not prepared backup if no-prepared option
-  --no-check             Skip checking the compressed archive
   --threads=THREADS      Backup threads  [default: 1]
-  --compress-threads=CTHREADS      Compress threads using pigz  [default: 1]
   --keep=DAYS            Keep DAYS number of days backups  [default: 1]
   --enc                  Encrypt using openssl with passphrase
   --slave-safe           Stops SQL Thread for consistent slave backup
   --throttle=IOPS        IOPS in MB/S
+  --login-path           Use mysql login-path 
 
 Other:
   --full                 Full backup
@@ -22,12 +21,16 @@ Other:
   --no-prepare           Skip prepare step
   --prepare-mem=MEM      Extra memory for preparing backup  [default: 1G]
   --defaults-file=DFILE  Use as the defaults file for useful for multi instance databases
+  --generate-pigz        Generate pigz scripts for threaded compression
+  --compress             Compress prepared or not prepared backup if no-prepared option
+  --compress-threads=CTHREADS      Compress threads using pigz  [default: 1]
+  --no-check             Skip checking the compressed archive
 
 """
 #FIXME add option for nocheck space
 #FIXME add option to use login-path
 #FIXME update alogrith for checking space get du datadir 1.X of target_path
-#FIXME xtrabackup
+#TODO add help to generate the pigz_N scripts in the working directory
 
 import os
 import re
@@ -49,9 +52,13 @@ from docopt import docopt
 
 import clean
 import etc.innodbbackup_config as config
-from secureconfig import SecureConfigParser, SecureConfigException, zeromem
+try:
+    from secureconfig import SecureConfigParser, SecureConfigException, zeromem
+except ImportError as e:
+    print(e)
+    from lib.secureconfig import SecureConfigParser, SecureConfigException, zeromem
+    sys.exit(0)
 
-__version__ = "0.8.2.0"
 __version__ = "0.8.2.1"
 __author__ = "Mark Gruenberg"
 
@@ -392,6 +399,16 @@ def check_success(out):
     return issucc
 
 
+def gen_pigz_thread_helper():
+    import stat
+
+    for p in range(2, psutil.cpu_count()*2 + 1):
+        fname = '{}/pigz_{}'.format(config.working_dir, p)
+        with open(fname, 'w') as f:
+            f.write('pigz -p {}\n'.format(p))
+        os.chmod(fname, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH)
+
+
 def check_pigz_treads(threads):
     threads = int(threads)
     assert threads > 0 and threads <= psutil.cpu_count()*2, 'Compress threads are limited to a maximum of 2 x core count'
@@ -403,11 +420,15 @@ def check_pigz_treads(threads):
         max_pigz = max(pigz, key=lambda x:int(x.split('_')[-1]))
         min_pigz = min(pigz, key=lambda x:int(x.split('_')[-1]))
 
-        if threads > max_pigz:
-            threads = max_pigz
+        max_pigz_threads = int(max_pigz.split('_')[-1])
+        if threads > max_pigz_threads:
+            threads = max_pigz_threads
             print('WARNING Compression threads adjusted to {} threads'.format(max_pigs))
     except:
-        print('WARNING Unexpected error occured in checking compression threads.')
+        if len(pigz) == 0:
+            print('WARNING: No pigz helper scripts in working directory. To build run with --generate-pigz')
+        else:
+            print('WARNING Unexpected error occured in checking compression threads.')
         print('        threads set to 1')
         threads = 1
 
@@ -553,6 +574,10 @@ def run_backup(cmd, cmd_hide):
 def main(opts):
     """ builds a backup command string list for subprocess from options """
 
+    if arguments['--generate-pigz']:
+        gen_pigz_thread_helper()
+        sys.exit(0)
+
     if arguments['--full']:
         cmd, cmd_hide, backup_path, backup_base, top_backup_base = build_full(arguments)
         clean.clean_backups(top_backup_base, int(arguments['--keep']), False)
@@ -568,10 +593,7 @@ def main(opts):
         if succ and opts['--compress']:
             #TODO add compress threads
             threads = check_pigz_treads(opts['--compress-threads'])
-            if opts['--no-check']:
-                tar_file = tar_dir(backup_path, threads, check=False)
-            else:
-                tar_file = tar_dir(backup_path, threads, check=True)
+            tar_file = tar_dir(backup_path, threads, check=not opts['--no-check'])
             if opts['--enc']:
                 encrypt(tar_file, config.pass_phrase)
     elif arguments['--inc']:
