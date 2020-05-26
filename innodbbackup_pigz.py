@@ -267,21 +267,15 @@ def build_full(opts):
         os.makedirs(current_backup_base)
     except OSError as e:
         if e.errno == 13:
-            #print("ERROR don't have permissions to create {0}".format(current_backup_base))
             raise BackupErrorPermissions('creating backup directory', e)
         elif e.errno == 17:
             print('Warning path already exists {0}'.format(e))
         else:
-            #print('ERROR: Creating base backup directory, error: {0}'.format(e))
             raise BackupErrorPermissions('creating backup directory', e)
-            #check_space(current_backup_path)
-            #sys.exit(-1)
 
     threads = '--parallel={0}'.format(opts['--threads'])
     slave_safe = '--slave-safe-backup' if opts['--slave-safe'] else ''
     throttle_io = '--throttle={}'.format(opts['--throttle']) if opts['--throttle'] else ''
-    #backup_user = '--user={0}'.format(config.backup_user)
-    #secret = '--password={}'.format(cisco_type7.decode(config.secret)) if len(config.secret) > 0 else ''
     port = '--port={0}'.format(scfg.get(section, 'port'))
     backup_user = '--user={0}'.format(scfg.get(section, 'backup_user'))
     secret = '--password={}'.format(scfg.get(section, 'secret')) if len(scfg.get(section, 'secret'))>0 else ''
@@ -334,7 +328,6 @@ def build_inc(opts):
     """
     assert opts['--full'] == False, 'ASSERT ERROR: full backup in incremental setup.'
     assert opts['--inc'] >= 0, ('ASSERT ERROR: bad value {} for --inc'.format(opts['--inc']))
-    # FIXME current backup path, backup_path
     backup_base = config.base_dir if not opts['<BACKUP_BASE_PATH>'] else opts['<BACKUP_BASE_PATH>']
     current_datetime = datetime.now()
     current_date = datetime.strftime(current_datetime, '%Y-%m-%d')
@@ -371,7 +364,6 @@ def build_inc(opts):
 
 
 def build_full_prepare(opts, backup_path):
-    #backup_user = '--user={0}'.format(config.backup_user)
     threads = '--parallel={0}'.format(opts['--threads'])
     target_dir = '--target-dir={}'.format(backup_path)
     if opts['--prepare-mem']:
@@ -442,7 +434,6 @@ def tar_dir(backup_path, threads=1, check=True):
                                '/root', '/data', '/data/mysql', '/data/backup',
                                '/sbin', '/tmp', '/usr', '/var'), 'Bad backup_path {0}'.format(backup_path)
 
-    #name = os.path.basename(backup_path)
     tar_file = backup_path + '.tgz'
     print('tar: {0}'.format(tar_file))
     if threads == 1:
@@ -454,9 +445,6 @@ def tar_dir(backup_path, threads=1, check=True):
         out = subprocess.check_call(cmd)
         print('TAR completed.')
     except subprocess.CalledProcessError as e:
-        #print('Error: Tar Compression Failed: {0}'.format(e))
-        #print('Removing failed tarball: {0}'.format(tar_file))
-        #os.remove(tar_file)
         raise BackupErrorTarFailed('tar failed', e)
     else:
         if check:
@@ -495,7 +483,6 @@ def encrypt(archive_path, passphase_path):
     :param passphase_path: Path to password used for openssl encryption
     :return:
     """
-    # openssl enc -e -aes-256-cbc -pass file:/root/.secret.txt -in sso.2016020907.sql.gz -out sso.2016020907.sql.gz.enc
     assert os.path.exists(archive_path), "Error can't find backup archive '{}'".format(archive_path)
     assert os.path.exists(passphase_path), "Error can't open pass phrase file '{}'".format(passphase_path)
     in_file = '-in {}'.format(archive_path)
@@ -517,21 +504,12 @@ def encrypt(archive_path, passphase_path):
 def run_sql(sql):
     if not isinstance(sql, (list, tuple)):
         sql = [s for s in sql.split(';') if s!='']
-    #secret = cisco_type7.decode(config.super_secret) if len(config.super_secret) > 0 else ''
     
     config = {
         'user': scfg.get(section, 'super_user'),
         'passwd': scfg.get(section, 'super_secret'),
         'port': int(scfg.get(section, 'port')),
         }
-    """
-    db = MySQLdb.connect(host="127.0.0.1",
-                         user=config.super_user,
-                         port=config.port,
-                         passwd=secret
-                         #db="jonhydb"
-                         )
-    """
     db = mysql.connector.connect(**config)
     cur = db.cursor()
 
@@ -552,7 +530,7 @@ def run_backup(cmd, cmd_hide):
     #run_sql('stop slave sql_thread;set global slave_parallel_workers=0;start slave sql_thread;set global innodb_flush_log_at_trx_commit=1;flush engine logs;set global old_alter_table=1')
     #TODO FIXME
     #run_sql('set global innodb_flush_log_at_trx_commit=1;flush engine logs;set global old_alter_table=1')
-    print('Sleeping for 60 seconds while logs flush')
+    #print('Sleeping for 60 seconds while logs flush')
     #TODO FIXME
     #sleep(60)
     print(' '.join(cmd_hide))
@@ -590,8 +568,7 @@ def main(opts):
             succ = run_backup(cmd, cmd_hide)
             print('Prepare ended {0}'.format(('Error', 'Successfully')[succ]))
             if not succ: raise BackupErrorBackupFailed('Prepare', backup_path)
-        if succ and opts['--compress']:
-            #TODO add compress threads
+        if succ and (opts['--compress'] or int(opts['--compress-threads'])>1):
             threads = check_pigz_treads(opts['--compress-threads'])
             tar_file = tar_dir(backup_path, threads, check=not opts['--no-check'])
             if opts['--enc']:
@@ -606,35 +583,8 @@ def create_backup_dir(backup_type, level=None):
 
 if __name__ == '__main__':
     arguments = docopt(__doc__, version=__version__)
-    """
-    try:
-        current_backup_base = '/Users/md_admin/Documents/test'
-        os.makedirs(current_backup_base)
-    except OSError as e:
-        if e.errno == 13:
-            #print("ERROR don't have permissions to create {0}".format(current_backup_base))
-            raise BackupErrorPermissions('creating backup directory', e)
-        elif e.errno == 17:
-            print('Warning path already exists {0}'.format(e))
-        else:
-            #print('ERROR: Creating base backup directory, error: {0}'.format(e))
-            raise BackupErrorPermissions('creating backup directory', e)
-
-    #raise BackupErrorBackupFailed('Prepare')
-    raise BackupErrorBackupFailed('Backup')
-    space = os.statvfs('.')
-    #if space.f_bavail * space.f_bsize < 1024 * 1024 * 1024 * 30:
-    #    raise BackupErrorNoSpace((backup_path, space.f_bavail * space.f_bsize))
-    raise BackupErrorNoSpace(('backup_path', space.f_bavail * space.f_bsize), 'ERROR')
-    sys.exit(1)
-    """
     print(arguments)
     start = datetime.now()
-    #tar_dir('/fluid/backup/2016-08-02/FULL/10-09-51', False)
-    #encrypt('/disk2/backup/XBACKUP/2016-02-09/FULL/08-51-32.tgz', '/root/.secret.txt')
-    #threads = check_pigz_treads('4')
-    #print('threads {}'.format(threads))
-    #sys.exit()
     main(arguments)
     end = datetime.now()
     print('Backup completed at {0} in {1}'.format(end, end - start))
