@@ -4,8 +4,8 @@ wrapper for xtrabackup
 * updated to use xtrabackup
 * added secureconfig
 * supports pigz thread compression
-* compatable with python3
-* python3 will requiring using an off branch version of secureconfig
+* compatible with python3
+* python3 requires using an off branch version of secureconfig
 * refactored docopt option arguments
 * added option to generate pigz helper scripts
 
