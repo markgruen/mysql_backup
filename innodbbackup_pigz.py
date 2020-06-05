@@ -59,7 +59,7 @@ except ImportError as e:
     from lib.secureconfig import SecureConfigParser, SecureConfigException, zeromem
     sys.exit(0)
 
-__version__ = "0.8.2.1"
+__version__ = "0.9"
 __author__ = "Mark Gruenberg"
 
 scfg = SecureConfigParser.from_file(config.key_path)
@@ -568,7 +568,7 @@ def main(opts):
             succ = run_backup(cmd, cmd_hide)
             print('Prepare ended {0}'.format(('Error', 'Successfully')[succ]))
             if not succ: raise BackupErrorBackupFailed('Prepare', backup_path)
-        if succ and (opts['--compress'] or int(opts['--compress-threads'])>1):
+        if succ and (opts['--compress'] or int(opts['--compress-threads'])>0):
             threads = check_pigz_treads(opts['--compress-threads'])
             tar_file = tar_dir(backup_path, threads, check=not opts['--no-check'])
             if opts['--enc']:
