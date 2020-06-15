@@ -11,13 +11,23 @@ wrapper for xtrabackup
 
 to setup to use python3 
 
-```
-wget https://github.com/cimichaelm/python3-secureconfig/archive/master.zip
-python3 setup.py install 
+  sudo pip3 install setuptools --upgrade
+  sudo yum install gcc python3-devel
+
+
+Adding requirements
+
+  sudo pip3 install -r requirements.txt
+
+You can add python3 branch of secureconfig manually using:
+
+  wget https://github.com/cimichaelm/python3-secureconfig/archive/master.zip
+  sudo python3 setup.py install 
+
 
 change:
 
-```#! /usr/bin/env python2.7```
+#! /usr/bin/env python2.7```
 
 to:
 

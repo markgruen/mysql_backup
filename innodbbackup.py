@@ -57,7 +57,6 @@ try:
 except ImportError as e:
     print(e)
     from lib.secureconfig import SecureConfigParser, SecureConfigException, zeromem
-    sys.exit(0)
 
 __version__ = "0.9"
 __author__ = "Mark Gruenberg"

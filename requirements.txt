@@ -1,0 +1,11 @@
+mysql-connector
+docopt
+schema
+humanfriendly
+#osutil >= 0.0.9
+-e git://github.com/PencilShavings/python-osutil.git#egg=osutil
+psutil
+pyzmail36
+#secureconfig branch for python3
+-e git://github.com/cimichaelm/python3-secureconfig.git#egg=secureconfig
+
