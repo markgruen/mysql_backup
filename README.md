@@ -17,26 +17,26 @@ to setup to use python3
 
 Adding requirements
 
-  sudo pip3 install -r requirements.txt
+```sudo pip3 install -r requirements.txt```
 
 You can add python3 branch of secureconfig manually using:
 
+```
   wget https://github.com/cimichaelm/python3-secureconfig/archive/master.zip
   sudo python3 setup.py install 
-
+```
 
 change:
 
-#! /usr/bin/env python2.7```
+```#! /usr/bin/env python2.7```
 
 to:
 
 ```#! /usr/bin/env python3.6```
-```
 
 ## Before first backup run create the pigz helper scripts 
 
-  ./innodbbackup_pigz.py --generate-pigz
+```./innodbbackup_pigz.py --generate-pigz```
 
 ## create the secure config secrets file
 
