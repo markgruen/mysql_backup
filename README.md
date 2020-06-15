@@ -9,10 +9,12 @@ wrapper for xtrabackup
 * refactored docopt option arguments
 * added option to generate pigz helper scripts
 
-to setup to use python3 
+To setup to use python3 
 
-  sudo pip3 install setuptools --upgrade
-  sudo yum install gcc python3-devel
+```
+sudo pip3 install setuptools --upgrade
+sudo yum install gcc python3-devel
+```
 
 
 Adding requirements
